@@ -1,0 +1,49 @@
+----------revert wsl2 nuclear option-----------------------
+(run with admin cmd)
+bcdedit /set hypervisorlaunchtype auto
+
+dism /online /enable-feature /featurename:VirtualMachinePlatform /all
+
+----------disable Hyper-V on windows-----------------------
+(run with admin cmd)
+bcdedit /set hypervisorlaunchtype off
+
+----------setup------------------------------------------
+1. download proxmox
+2. put .iso of proxmox to self setup vbox
+3. disable hyper v and enable nested amd/intel 
+4. remove iso after install and partition done
+
+
+TODO: TMRW
+- set vbox network to NAT
+Change VirtualBox Settings:
+
+    Go to VirtualBox -> Proxmox VM Settings -> Network.
+
+    Change "Attached to:" back to NAT.
+
+Reconfigure Proxmox:
+
+    Because Proxmox is no longer on your 192.168.0.x network, it needs a new IP. VirtualBox NAT usually uses the 10.0.2.x subnet.
+
+    On the Proxmox Host shell, edit the interfaces file: nano /etc/network/interfaces
+
+    Change the vmbr0 address to 10.0.2.15/24 and gateway to 10.0.2.2.
+
+Reconfigure Ubuntu:
+
+    Your Ubuntu VM also needs to change. Edit its Netplan file to use an IP like 10.0.2.50/24 with the gateway 10.0.2.15 (pointing to Proxmox).
+
+---------solved issue-----------
+- use NAT and host-only adapter
+- set promiscuous mode to allow all
+- setup cloud init on proxmox
+- cloud-init clean and reboot VM1 
+
+the reason why bridged adapter does not work with nested VM is that at layer 2, the packets leave the VM with a unique, virtual MAC address. which is	 rejected by the home router's wireless protocol. MAC address wireless auth token must match that of my laptop. This is also why changing routing rules in layer 3 (IP or routing) will not work. With NAT, vbox takes the data out of the packet, puts it in a windows network request, and sends using the actual host IP and MAC address.
+
+host-only adapter for private connection between computer and proxmox VM. gives proxmox IP address that can be seen by host to load GUI
+NAT for gateway between outside world (internet) with the proxmox.
+
+setup OPNsense next
