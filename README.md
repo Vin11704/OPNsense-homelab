@@ -224,6 +224,7 @@ post-up ethtool -K vmbr1 gso off gro off tso off
 `ET emerging-scan` — port/network scanners
 `ET emerging-exploit` — known exploit patterns
 
+***images to show OPNsense IDS setup is successful:***
 ![alt text](blacksun_test.png)
 ![alt text](BlackSun_test_alert.png)
 
