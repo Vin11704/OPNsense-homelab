@@ -37,23 +37,23 @@ Windows Host
 
 In **Proxmox web UI** → your node → **Network** → **Create** → **Linux Bridge**
 
-**Bridge 1 — WAN (vmbr1):**
+**Bridge 1 — WAN (vmbr0):**
 | Field | Value |
 |-------|-------|
-| Name | `vmbr1` |
+| Name | `vmbr0` |
 | Bridge ports | `enp0s3` (your NAT NIC) |
 | IP address | *(leave blank — OPNsense owns this)* |
 | Autostart | ✅ |
 
-**Bridge 2 — LAN (vmbr2):**
+**Bridge 2 — LAN (vmbr1):**
 | Field | Value |
 |-------|-------|
-| Name | `vmbr2` |
+| Name | `vmbr1` |
 | Bridge ports | *(leave empty — purely internal)* |
 | IP address | *(leave blank)* |
 | Autostart | ✅ |
 
-> **Why no IP on vmbr1/vmbr2?** OPNsense will own those networks. Proxmox just acts as a switch.
+> **Why no IP on vmbr0?** OPNsense will own those networks. Proxmox just acts as a switch (layer-2). In fact, proxmox already has 192.168.56.10/24 for management purposes.
 
 ---
 
@@ -99,10 +99,12 @@ Walk through the wizard with these settings:
 **Memory**
 - RAM: `1024 MB` minimum; `2048 MB` recommended
 
-**Network** — this is the key part: add **two** NICs
+**Network** — add **two** NICs
 
-- **NIC 1** (WAN): Bridge = `vmbr0`, Model = `VirtIO (paravirt)`
-- **NIC 2** (LAN): Bridge = `vmbr1`, Model = `VirtIO (paravirt)`
+- **NIC 1** (WAN): Bridge = `vmbr0`, Model = `VirtIO (paravirt)`. faces the VirtualBox NAT network
+- **NIC 2** (LAN): Bridge = `vmbr1`, Model = `VirtIO (paravirt)`. faces your interal VM network (e.g. VM1)
+
+> **what is paravirtualization?** It's a method of virtualization that allows the guest OS to be aware that it's running in a virtualized environment, which can improve performance (lower CPU overhead and better disk throughput). VirtIO is a standard for network and disk device drivers that provides high-performance I/O.
 
 You add the second NIC after the wizard via **Hardware** → **Add** → **Network Device**.
 
@@ -132,8 +134,8 @@ After reboot, OPNsense boots to a CLI menu.
 **Step 5a — Assign WAN/LAN**
 
 Choose option **1) Assign interfaces**:
-- Do you want to configure LAGGs? → `n`
-- Do you want to configure VLANs? → `n`
+- Do you want to configure LAGGs? → `n` (LAGG = Link Aggregation, not needed for a simple lab)
+- Do you want to configure VLANs? → `n` (separate bridges used, not VLANs)
 - WAN interface: `vtnet0`
 - LAN interface: `vtnet1`
 - Confirm with `y`
@@ -141,13 +143,13 @@ Choose option **1) Assign interfaces**:
 **Step 5b — Set LAN IP**
 
 Choose option **2) Set interface IP address** → select `LAN`:
-- Configure IPv4 via DHCP? → `n`
+- Configure IPv4 via DHCP? → `n` (virtualbox NAT already does it the moment vtnet0 comes up)
 - LAN IPv4 address: `192.168.1.1`
 - Subnet bit count: `24`
 - Upstream gateway? → press Enter (none for LAN)
 - Configure IPv6? → `n`
 - Enable DHCP server on LAN? → `y`
-- Start of DHCP range: `192.168.1.100`
+- Start of DHCP range: `192.168.1.100` (start at 100 to leave room for static IPs)
 - End of DHCP range: `192.168.1.200`
 
 The WAN (`vtnet0`) will get a DHCP address from the VirtualBox NAT range (10.0.2.x) automatically.
@@ -156,7 +158,7 @@ The WAN (`vtnet0`) will get a DHCP address from the VirtualBox NAT range (10.0.2
 
 ## section 6 — Access the web UI
 
-Since the windows host can't directly reach `192.168.1.x` (that's inside vmbr2), the easiest option for a lab is to spin up a lightweight VM on the LAN side. This is where VM1 or any other extra VMis used:
+Since the windows host can't directly reach `192.168.1.x` (that's inside vmbr1), the easiest option for a lab is to spin up a lightweight VM on the LAN side. This is where VM1 or any other extra VMs used:
 
 1. downloaded xfce4 for a mini desktop UI environment, then installed firefox to access the OPNsense web UI. 
 2. run http://192.168.1.1 on firefox of VM
