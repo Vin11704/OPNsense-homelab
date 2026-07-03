@@ -183,12 +183,13 @@ curl -k https://192.168.1.1  # confirms web UI is up
 **Hardware offloading issues:** If you see dropped packets or weird routing behavior, disable NIC offloading on the Proxmox host for those bridges:
 
 ```bash
+ethtool -K vmbr0 gso off gro off tso off
 ethtool -K vmbr1 gso off gro off tso off
-ethtool -K vmbr2 gso off gro off tso off
 ```
 
 Add these to `/etc/network/interfaces` under each bridge to persist across reboots:
 ```
+post-up ethtool -K vmbr0 gso off gro off tso off
 post-up ethtool -K vmbr1 gso off gro off tso off
 ```
 
