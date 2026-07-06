@@ -1,2 +1,3 @@
 impt-commands.txt
 /dump
+terraform/*.tfvars
