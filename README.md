@@ -19,7 +19,7 @@ Steps I did to build a nested OPNsense firewall in Proxmox VE running inside Vir
 ```
 Windows Host 
 └── VirtualBox
-    └── Proxmox VE (10.0.2.15 via NAT | 192.168.56.10 via Host-Only)
+    └── Proxmox VE (10.0.2.15 via NAT | 192.168.56.10 via Host-Only (for UI, port 8006))
         ├── vmbr0 → VirtualBox NAT → Internet
         └── vmbr1 (inner bridge)
             ├── OPNsense VM
@@ -161,9 +161,11 @@ The WAN (`vtnet0`) will get a DHCP address from the VirtualBox NAT range (10.0.2
 Since the windows host can't directly reach `192.168.1.x` (that's inside vmbr1), the easiest option for a lab is to spin up a lightweight VM on the LAN side. This is where VM1 or any other extra VMs used:
 
 1. downloaded xfce4 for a mini desktop UI environment, then installed firefox to access the OPNsense web UI. 
-2. run http://192.168.1.1 on firefox of VM
-3. `sudo ip addr flush dev eth0` then `sudo dhclient eth0` to clear out stubborn static ghost IP 
-4.  `startx` to launch the desktop environment
+2. `startx` to launch the desktop environment
+3. `sudo ip addr flush dev eth0` then `sudo dhclient eth0` to clear out stubborn static ghost IP. (IMPORTANT)
+4. run http://192.168.1.1 on firefox of VM
+
+
 
 
 ```bash
