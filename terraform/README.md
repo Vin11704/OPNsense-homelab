@@ -4,9 +4,8 @@ These are some of the procedures and decisions I made throughout my implementati
 ## Cloud-init Template
 To clone a VM in proxmox, a cloud-init template is recommended to be used. The cloud-init template is a pre-configured VM image that allows for automated configuration of the VM during the cloning process. 
 
-<!-- Review the full set of permissions again later, can't remember them all -->
 To adhere to best practices (separation of duties, least privilege), it is recommended to create a new role in Proxmox called `TerraformProv` with the following permissions:
-`VM.Allocate, VM.Clone, VM.Config.CDROM, VM.Config.CPU, VM.Config.Cloudinit, VM.Config.Disk, VM.Config.Memory, VM.Config.Network, VM.Config.Options, VM.Console, VM.GuestAgent.Audit, VM.Monitor, VM.PowerMgmt, VM.Audit, Datastore.Audit, Datastore.AllocateSpace, Datastore.AllocateTemplate, Sys.Audit`
+`VM.Config.Cloudinit, Datastore.AllocateSpace, Datastore.Allocate, VM.Config.Options, VM.GuestAgent.Audit, VM.Clone, SDN.Use, VM.Config.CPU, VM.Config.HWType, VM.Allocate, VM.PowerMgmt, VM.Audit, Datastore.Audit, Sys.Audit, VM.Config.CDROM, VM.Config.Disk, VM.Config.Memory, VM.Config.Network`
 
 Full steps of role and user creation:
 ```shell
@@ -14,7 +13,7 @@ Full steps of role and user creation:
 pveum user add terraform@pve 
 
 # create role
-pveum role add TerraformProv -privs "VM.Allocate,VM.Clone,VM.Config.CDROM,VM.Config.CPU,VM.Config.Cloudinit,VM.Config.Disk,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Console,VM.GuestAgent.Audit,VM.Monitor,VM.PowerMgmt,VM.Audit,Datastore.Audit,Datastore.AllocateSpace,Datastore.AllocateTemplate,Sys.Audit"
+pveum role add TerraformProv -privs "VM.Config.Cloudinit, Datastore.AllocateSpace, Datastore.Allocate, VM.Config.Options, VM.GuestAgent.Audit, VM.Clone, SDN.Use, VM.Config.CPU, VM.Config.HWType, VM.Allocate, VM.PowerMgmt, VM.Audit, Datastore.Audit, Sys.Audit, VM.Config.CDROM, VM.Config.Disk, VM.Config.Memory, VM.Config.Network"
 
 # create ACL for the user and role
 pveum aclmod / -user terraform@pve -role TerraformProv
@@ -64,11 +63,20 @@ The files used include:
 - variables.tf -- This file contains the variable definitions for Terraform, including variable types, default values, and descriptions.
 - versions.tf -- This file contains the required Terraform version and provider versions.
 
+Run `terraform init` to initialize the Terraform working directory and download the required provider plugins. Then run `terraform plan` to see the execution plan and verify that the configuration is correct. Finally, run `terraform apply` to create the resources defined in the configuration files. 
+
+To destroy the resources created by Terraform, run `terraform destroy`. This will remove all resources defined in the configuration files.
+
+
+`terraform init` --> `terraform plan` --> `terraform apply` --> `terraform destroy`
+
 ## Strong Reminders
 There are some things that are important to remember when cloning VMs in proxmox with Terraform:
 - ALWAYS ensure that OPNsense is powered on before running `terraform apply`. If OPNsense is not powered on, the Terraform apply will fail (stuck at creation of the VM).
 - If you are using a custom cloud-init template, ensure that the template is properly configured and available in Proxmox. If the template is not available, Terraform will fail to create the VM.
 - Ensure the permissions of the newly created TerraformProv role are correctly set.
+- After cloning is complete, check if package downloaded:
+`dpkg -l qemu-guest-agent`
 
 
 
